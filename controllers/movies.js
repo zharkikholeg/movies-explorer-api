@@ -32,20 +32,19 @@ module.exports.createMovie = (req, res, next) => {
 
 module.exports.deleteMovie = (req, res, next) => {
   const reqId = req.user._id;
-  console.log(req.params.movieId);
-  Movie.findOne({
-    movieId: req.params.movieId,
+  Movie.findById({
+    _id: req.params.movieId,
     owner: reqId,
   })
     .then((movie) => {
       if (!movie) {
-        const err = new Error('Фильм с указанным _id не найден 1');
+        const err = new Error('Фильм с указанным _id не найден');
         err.statusCode = 404;
         return next(err);
       }
       if (movie.owner.toString() === reqId) {
         Movie.findOneAndRemove({
-          movieId: req.params.movieId,
+          _id: req.params.movieId,
           owner: reqId,
         })
           .then((movieResult) => {
@@ -60,12 +59,12 @@ module.exports.deleteMovie = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         // return res.status(400).send({ message: 'Карточка с указанным _id не найдена' });
-        const err = new Error('Фильм с указанным _id не найден 2');
+        const err = new Error('Фильм с указанным _id не найден');
         err.statusCode = 404;
         return next(err);
       }
       if (err.name === 'NotFound') {
-        const err = new Error('Фильм с указанным _id не найден 3');
+        const err = new Error('Фильм с указанным _id не найден');
         err.statusCode = 404;
         return next(err);
       }

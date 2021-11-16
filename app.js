@@ -11,6 +11,9 @@ const auth = require('./middlewares/auth');
 const errors = require('./middlewares/errors');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 
+const { NODE_ENV, DB_ADDRESS } = process.env;
+const db = NODE_ENV === 'production' ? DB_ADDRESS : 'mongodb://localhost:27017/moviesdb';
+
 const app = express();
 const port = 3000;
 
@@ -19,7 +22,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://localhost:27017/moviesdb', {
+mongoose.connect(db, {
   useNewUrlParser: true,
   autoIndex: true,
 });
