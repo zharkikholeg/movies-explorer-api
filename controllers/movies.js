@@ -49,7 +49,8 @@ module.exports.deleteMovie = (req, res, next) => {
         })
           .then((movieResult) => {
             res.send(movieResult);
-          });
+          })
+          .catch(next);
       } else {
         const err = new Error('Вы не являетесь владельцем этого фильма');
         err.statusCode = 403;

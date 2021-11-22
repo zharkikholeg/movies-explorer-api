@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user');
 require('dotenv').config();
 
-const { NODE_ENV, JWT_SECRET } = process.env;
 
 module.exports.createUser = (req, res, next) => {
   const {
@@ -71,7 +70,7 @@ module.exports.login = (req, res, next) => {
       // аутентификация успешна
       const token = jwt.sign(
         { _id: userId },
-        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        process.env.NODE_ENV === 'production' ? process.env.JWT_SECRET : 'dev-secret',
         { expiresIn: '7d' },
       );
 
@@ -112,31 +111,41 @@ module.exports.updateUser = (req, res, next) => {
   const { name, email } = req.body;
   console.log(name);
 
-  User.findByIdAndUpdate(userId, { name, email }, { new: true, runValidators: true })
+  User.findById(userId)
     .then((user) => {
-      // console.log(user);
-      if (user) {
-        res.send(user);
+      if (user.email === email) {
+        User.findByIdAndUpdate(userId, { name, email }, { new: true, runValidators: true })
+          .then((user) => {
+            // console.log(user);
+            if (user) {
+              res.send(user);
+            } else {
+              const err = new Error('Пользователь по указанному _id не найден');
+              err.statusCode = 400;
+              return next(err);
+            }
+          })
+          .catch((err) => {
+            if (err.name === 'CastError') {
+              const err = new Error('Пользователь по указанному _id не найден');
+              err.statusCode = 400;
+              return next(err);
+            }
+            if (err.name === 'ValidationError') {
+              const err = new Error('Переданы некорректные данные при обновлении профиля');
+              err.statusCode = 400;
+              return next(err);
+            }
+            const err2 = new Error('На сервере произошла ошибка');
+            err2.statusCode = 500;
+            return next(err2);
+          })
+          .catch(next);
       } else {
-        const err = new Error('Пользователь по указанному _id не найден');
-        err.statusCode = 400;
+        const err = new Error('Этот email принадлежит другому пользователю');
+        err.statusCode = 409;
         return next(err);
       }
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        const err = new Error('Пользователь по указанному _id не найден');
-        err.statusCode = 400;
-        return next(err);
-      }
-      if (err.name === 'ValidationError') {
-        const err = new Error('Переданы некорректные данные при обновлении профиля');
-        err.statusCode = 400;
-        return next(err);
-      }
-      const err2 = new Error('На сервере произошла ошибка');
-      err2.statusCode = 500;
-      return next(err2);
     })
     .catch(next);
 };
